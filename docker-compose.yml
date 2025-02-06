@@ -1,7 +1,9 @@
 services:
   postgres:
     container_name: postgres_container
-    image: postgres:16.1-alpine3.18
+    build:
+      dockerfile: ./Dockerfile
+      context: .
     command:
       - "postgres"
       - "-c"
@@ -36,10 +38,11 @@ services:
       POSTGRES_DB: "tvgudb"
       POSTGRES_USER: "tvgupguser"
       POSTGRES_PASSWORD: "pgpwd4tvgu"
-      PGDATA: "/var/lib/postgresql/data/pgdata"
+      PGDATA: "/var/lib/postgresql/data"
     volumes:
-      - ../2. Init Database:/docker-entrypoint-initdb.d
-      - tvgudb-data:/var/lib/postgresql/data
+      - .:/app:rw
+      - ./docker/initdb:/docker-entrypoint-initdb.d
+      - ./docker/postgres-data:/var/lib/postgresql/data
       - ./scripts:/root/scripts
     ports:
       - "6432:5432"
