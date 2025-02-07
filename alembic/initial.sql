@@ -29,7 +29,7 @@ CREATE TABLE student_discipline (
 -- Добавление тестовых данных
 
 -- Студенты
-INSERT INTO student (second_name, name, patronumic, n_group, telephone) VALUES
+INSERT INTO student (second_name, name, patronymic, n_group, telephone) VALUES
     ('Иванов', 'Алексей', 'Сергеевич', '11A', '89005553322'),
     ('Петров', 'Иван', 'Алексеевич', '11A', '89001234567'),
     ('Сидоров', 'Николай', 'Игоревич', '12B', NULL),
