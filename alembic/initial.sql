@@ -1,48 +1,48 @@
 -- Создание таблицы Студент
-CREATE TABLE Студент (
-    N_зачетки SERIAL PRIMARY KEY,
-    фамилия VARCHAR(50) NOT NULL,
-    имя VARCHAR(50) NOT NULL,
-    отчество VARCHAR(50) NOT NULL,
-    N_группы VARCHAR(10) NOT NULL,
-    телефон VARCHAR(20) DEFAULT NULL,
-    CHECK (N_группы ~ '^\d{2}[A-Z]?$')  -- Теперь разрешает '11A', '12B'
+CREATE TABLE student (
+    n_credit_book SERIAL PRIMARY KEY,
+    second_name VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    patronymic VARCHAR(50) NOT NULL,
+    n_group VARCHAR(10) NOT NULL,
+    telephone VARCHAR(20) DEFAULT NULL,
+    CHECK (n_group ~ '^\d{2}[A-Z]?$')  -- Теперь разрешает '11A', '12B'
 );
 
 -- Создание таблицы Предмет
-CREATE TABLE Предмет (
-    N_предмета SERIAL PRIMARY KEY,
-    название_предмета VARCHAR(100) NOT NULL,
-    фамилия_преподавателя VARCHAR(50) NOT NULL
+CREATE TABLE discipline (
+    n_discipline SERIAL PRIMARY KEY,
+    title_discipline VARCHAR(100) NOT NULL,
+    second_name_teacher VARCHAR(50) NOT NULL
 );
 
 -- Создание таблицы Студент_предмет (связь между студентами и предметами)
-CREATE TABLE Студент_предмет (
-    N_зачетки INT NOT NULL,
-    N_предмета INT NOT NULL,
-    оценка INT NOT NULL CHECK (оценка BETWEEN 2 AND 5),
-    PRIMARY KEY (N_зачетки, N_предмета),
-    FOREIGN KEY (N_зачетки) REFERENCES Студент(N_зачетки) ON DELETE CASCADE,
-    FOREIGN KEY (N_предмета) REFERENCES Предмет(N_предмета) ON DELETE CASCADE
+CREATE TABLE student_discipline (
+    n_credit_book INT NOT NULL,
+    n_discipline INT NOT NULL,
+    estimation INT NOT NULL CHECK (estimation BETWEEN 2 AND 5),
+    PRIMARY KEY (n_credit_book, n_discipline),
+    FOREIGN KEY (n_credit_book) REFERENCES student(n_credit_book) ON DELETE CASCADE,
+    FOREIGN KEY (n_discipline) REFERENCES discipline(n_discipline) ON DELETE CASCADE
 );
 
 -- Добавление тестовых данных
 
 -- Студенты
-INSERT INTO Студент (фамилия, имя, отчество, N_группы, телефон) VALUES
+INSERT INTO student (second_name, name, patronymic, n_group, telephone) VALUES
     ('Иванов', 'Алексей', 'Сергеевич', '11A', '89005553322'),
     ('Петров', 'Иван', 'Алексеевич', '11A', '89001234567'),
     ('Сидоров', 'Николай', 'Игоревич', '12B', NULL),
     ('Федоров', 'Антон', 'Викторович', '12B', '89009876543');
 
 -- Предметы
-INSERT INTO Предмет (название_предмета, фамилия_преподавателя) VALUES
+INSERT INTO discipline (title_discipline, second_name_teacher) VALUES
     ('Математика', 'Смирнов'),
     ('Физика', 'Петров'),
     ('Английский язык', 'Сидорова');
 
 -- Записи о сдаче экзаменов
-INSERT INTO Студент_предмет (N_зачетки, N_предмета, оценка) VALUES
+INSERT INTO student_discipline (n_credit_book, n_discipline, estimation) VALUES
     (1, 1, 5),  -- Иванов по математике
     (1, 2, 4),  -- Иванов по физике
     (2, 1, 3),  -- Петров по математике
