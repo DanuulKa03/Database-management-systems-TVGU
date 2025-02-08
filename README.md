@@ -14,4 +14,10 @@ docker compose down
 ```shell
 docker compose exec postgres sh
 ```
-Вы попадете в консоль контейнера, по умолчанию вы окажитесь в корне. 
+Вы попадете в консоль контейнера, по умолчанию вы окажитесь в папке app. 
+
+Для инициализации базы данных нужно ввести команду
+```shell
+docker compose exec postgres alembic upgrade head
+```
+
