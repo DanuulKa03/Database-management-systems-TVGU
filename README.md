@@ -21,3 +21,7 @@ docker compose exec postgres sh
 docker compose exec postgres alembic upgrade head
 ```
 
+Подключение к базе данных
+```shell
+  docker compose exec postgres psql -h localhost -U tvgupguser -d tvgudb
+```
