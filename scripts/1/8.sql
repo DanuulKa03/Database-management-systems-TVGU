@@ -1,1 +1,1 @@
-SELECT n_group FROM student GROUP BY n_group
+SELECT n_group FROM student GROUP BY n_group;
