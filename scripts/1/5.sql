@@ -1,0 +1,1 @@
+SELECT * FROM student WHERE second_name LIKE 'Иванов';
