@@ -1,0 +1,2 @@
+SELECT second_name_teacher FROM discipline as DE WHERE EXISTS(SELECT * FROM student_discipline as SD
+                                                                 WHERE DE.n_discipline = SD.n_discipline);

@@ -1,0 +1,3 @@
+SELECT second_name FROM student as ST
+                   WHERE EXISTS(SELECT * FROM student_discipline as SD
+                                         WHERE ST.n_credit_book = SD.n_credit_book AND SD.estimation > 2 AND );
