@@ -49,16 +49,18 @@
 		NATURAL JOIN discipline d 
 		
 --     6.  Получить список студентов 11 группы в алфавитном порядке.
-		SELECT * FROM student ORDER BY second_name ASC
+		SELECT * FROM student 
+		WHERE n_group LIKE '11%' 
+		ORDER BY second_name ASC
 		
 --     7.  Упорядочить вывод 4 запроса по дисциплинам и по баллам.
 		SELECT 
 			n_credit_book AS "№зачетки", 
 			d.title_discipline AS "название предмета", 
-			estimation AS "баллы"
+			(estimation * 10) AS "рейтинг"
 		FROM student_discipline sd
 		JOIN discipline d ON sd.n_discipline = d.n_discipline
-		ORDER BY d.title_discipline, estimation DESC
+		ORDER BY d.title_discipline, estimation DESC --можно BY 2, 3
 		
 --     8.  Вывести наивысший и наименьший баллы, полученные студентами по английскому языку.
 		SELECT 
@@ -71,7 +73,7 @@
 			MAX(estimation) AS "наивысший балл", 
 			MIN(estimation) AS "наименьший балл"
 		FROM student_discipline
-		WHERE n_discipline = (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык')
+		WHERE n_discipline IN (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык')
 
 --     9.  Вывести количество оценок 5, полученных студентами по английскому языку.
 		SELECT COUNT(*) AS "количество оценок 5" 
@@ -80,7 +82,7 @@
 		---------------------------------------
 		SELECT COUNT(*) AS "количество оценок 5"
 		FROM student_discipline
-		WHERE n_discipline = (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык') AND estimation = 5;
+		WHERE n_discipline IN (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык') AND estimation = 5;
 
 --     10.  Получить среднее значение оценок по английскому языку в каждой группе.
 		SELECT 
@@ -88,7 +90,7 @@
 			ROUND(AVG(sd.estimation), 2) AS "среднее значение"
 		FROM student s
 		NATURAL JOIN student_discipline sd
-		WHERE n_discipline = (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык')
+		WHERE n_discipline IN (SELECT n_discipline FROM discipline WHERE title_discipline = 'Английский язык')
 		GROUP BY n_group
 		ORDER BY n_group
 		
@@ -140,7 +142,7 @@
 		SELECT 
     		d.title_discipline AS "название предмета", 
     		e.estimation AS "оценка", 
-    		COALESCE(COUNT(sd.estimation), 0) AS "количество оценок"
+    		COUNT(sd.estimation) AS "количество оценок"
 		FROM discipline d
 		CROSS JOIN (SELECT 2 AS estimation UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) e
 		LEFT JOIN student_discipline sd ON d.n_discipline = sd.n_discipline AND sd.estimation = e.estimation
@@ -186,26 +188,26 @@
     		s.name AS "Имя",
     		s.patronymic AS "Отчество",
     		e.estimation AS "Оценка",
-    		COALESCE(COUNT(sd.estimation), 0) AS "Количество оценок"
+    		COUNT(sd.estimation) AS "Количество оценок"
 		FROM student s
 		CROSS JOIN (SELECT 2 AS estimation UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) e
 		LEFT JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book AND sd.estimation = e.estimation
 		GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic, e.estimation
 		ORDER BY s.n_credit_book, e.estimation DESC
 ---------------2-способ-----------
-	SELECT 
-	    s.n_credit_book AS "№ зачетки",
-	    s.second_name AS "Фамилия",
-	    s.name AS "Имя",
-	    s.patronymic AS "Отчество",
-	   	COUNT(CASE WHEN sd.estimation = 2 THEN 1 END) AS "Количество «2»",
-		COUNT(CASE WHEN sd.estimation = 3 THEN 1 END) AS "Количество «3»",
-		COUNT(CASE WHEN sd.estimation = 4 THEN 1 END) AS "Количество «4»",
-		COUNT(CASE WHEN sd.estimation = 5 THEN 1 END) AS "Количество «5»"
-	FROM student s
-	LEFT JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
-	GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic
-	ORDER BY s.n_credit_book
+		SELECT 
+		    s.n_credit_book AS "№ зачетки",
+		    s.second_name AS "Фамилия",
+		    s.name AS "Имя",
+		    s.patronymic AS "Отчество",
+		   	COUNT(CASE WHEN sd.estimation = 2 THEN 1 END) AS "Количество «2»",
+			COUNT(CASE WHEN sd.estimation = 3 THEN 1 END) AS "Количество «3»",
+			COUNT(CASE WHEN sd.estimation = 4 THEN 1 END) AS "Количество «4»",
+			COUNT(CASE WHEN sd.estimation = 5 THEN 1 END) AS "Количество «5»"
+		FROM student s
+		LEFT JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
+		GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic
+		ORDER BY s.n_credit_book
 ---------------3-способ-----------
 	SELECT 
 	    s.n_credit_book AS "№ зачетки",
@@ -220,12 +222,13 @@
 	LEFT JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
 	GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic
 	ORDER BY s.n_credit_book;
+	
 --     17.  Вывести количество студентов в каждой группе, которые имеют телефон.
 		SELECT 
 			n_group AS "группа", 
-			COUNT(n_credit_book) AS "студентов c телефоном"
+			COUNT(telephone) AS "студентов c телефоном"
 		FROM student
-		WHERE telephone IS NOT NULL
+		--WHERE telephone IS NOT NULL
 		GROUP BY n_group
 		ORDER BY n_group
 		
@@ -258,7 +261,7 @@
 		FROM student_discipline sd
 		NATURAL JOIN student s
 		NATURAL JOIN discipline d
-		WHERE d.title_discipline = 'Английский язык' 
+		WHERE d.title_discipline LIKE 'Английский язык' 
 		AND sd.estimation = (	
 			SELECT 
 				MAX(estimation) 
