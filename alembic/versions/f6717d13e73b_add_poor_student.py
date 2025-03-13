@@ -26,7 +26,8 @@ def upgrade() -> None:
                ('Английский', 'Казаков'),
                ('Информатика', 'Коновалов'),
                ('Математика', 'Коновалов'),
-               ('Английский', 'Коновалов');
+               ('Английский', 'Коновалов')
+        ON CONFLICT (n_discipline) DO NOTHING;
     """)
 
     op.execute("""
@@ -41,7 +42,9 @@ def upgrade() -> None:
                (12, 1, 2),
                (12, 2, 2),
                (12, 3, 2),
-               (12, 10, 2);
+               (12, 10, 2)
+               
+           ON CONFLICT (n_credit_book, n_discipline) DO NOTHING;
     """)
 
 def downgrade() -> None:
