@@ -40,7 +40,23 @@ HAVING ROUND(AVG(sd.estimation), 2) > ANY (
     GROUP BY s2.n_credit_book
 )
 ORDER BY "Средняя оценка" DESC;
-
+----------------------------------------------------------------------------
+SELECT 
+    CONCAT(s.second_name, ' ', s.name, ' ', s.patronymic) AS "ФИО",
+    s.n_group AS "№ группы",
+    ROUND(AVG(sd.estimation), 2) AS "Средняя оценка"
+FROM student s
+JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
+GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic, s.n_group
+HAVING EXISTS (
+    SELECT 1
+    FROM student s2
+    JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
+    WHERE s2.second_name = 'Иванов'
+    GROUP BY s2.n_credit_book
+    HAVING ROUND(AVG(sd.estimation), 2) > ROUND(AVG(sd2.estimation), 2)
+)
+ORDER BY "Средняя оценка" DESC;
 
 --3. Вывести список студентов в виде таблицы (ФИО, №группы, средняя оценка), средняя оценка которых больше, 
 --чем у всех студентов по фамилии Иванов (2 варианта запроса).
@@ -59,26 +75,61 @@ HAVING ROUND(AVG(sd.estimation), 2) > ALL (
     GROUP BY s2.n_credit_book
 )
 ORDER BY "Средняя оценка" DESC;
+-------------------------------------------------------------------------
+WITH avg_ivanov AS (
+	SELECT ROUND(AVG(sd2.estimation), 2) AS r_avg
+    FROM student s2
+    JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
+    WHERE s2.second_name = 'Иванов'
+    GROUP BY s2.n_credit_book
+)
 
+SELECT 
+    CONCAT(s.second_name, ' ', s.name, ' ', s.patronymic) AS "ФИО",
+    s.n_group AS "№ группы",
+    ROUND(AVG(sd.estimation), 2) AS "Средняя оценка"
+FROM student s
+JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
+GROUP BY s.n_credit_book, s.second_name, s.name, s.patronymic, s.n_group
+HAVING ROUND(AVG(sd.estimation), 2) > (SELECT MAX(r_avg) FROM avg_ivanov)
+ORDER BY "Средняя оценка" DESC;
 
 --4. Вывести ФИО, №группы и оценку за экзамен по английскому языку тех студентов, 
 --которые сдали этот экзамен лучше, чем все студенты по фамилии Иванов (2 варианта запроса).
 SELECT 
     CONCAT(s.second_name, ' ', s.name, ' ', s.patronymic) AS "ФИО",
     s.n_group AS "№ группы",
-    sd.estimation AS "Оценка"
+    sd.estimation AS "оценка по английскому"
 FROM student s
 JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
 JOIN discipline d ON sd.n_discipline = d.n_discipline
-WHERE d.name = 'Английский язык'
+WHERE d.title_discipline = 'Английский'
 AND sd.estimation > ALL (
     SELECT sd2.estimation
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
     JOIN discipline d2 ON sd2.n_discipline = d2.n_discipline
-    WHERE s2.second_name = 'Иванов' AND d2.name = 'Английский язык'
+    WHERE s2.second_name = 'Иванов' AND d2.title_discipline = 'Английский'
 )
 ORDER BY sd.estimation DESC;
+----------------------------------------------------------------------------
+WITH avg_ivanov AS (
+	SELECT sd2.estimation
+    FROM student s2
+    JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
+	JOIN discipline d2 ON sd2.n_discipline = d2.n_discipline
+    WHERE s2.second_name = 'Иванов' AND d2.title_discipline = 'Английский'
+)
+
+SELECT 
+    CONCAT(s.second_name, ' ', s.name, ' ', s.patronymic) AS "ФИО",
+    s.n_group AS "№ группы",
+    sd.estimation AS "оценка по английскому"
+FROM student s
+JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
+JOIN discipline d ON sd.n_discipline = d.n_discipline
+WHERE d.title_discipline = 'Английский' AND sd.estimation > (SELECT MAX(avg_ivanov.estimation) FROM avg_ivanov)
+ORDER BY "оценка по английскому" DESC;
 
 --5. Вывести в алфавитном порядке в одном столбце фамилии, имена и отчества студентов и фамилии преподавателей, 
 --а во втором столбце – статус (студент/преподаватель).
@@ -189,12 +240,6 @@ ORDER BY s.n_group;
 
 --9. Вывести для каждого курса количество предметов, по которым студенты должны сдавать экзамены.
 --Результат представить в виде: Курс, количество экзаменов (2 варианта запроса).
-
---WITH courses AS (
-	--SELECT DISTINCT LEFT(n_group, 1)::INT AS course_number
-	--FROM student
-	--ORDER BY course_number
-	--)
 	
 SELECT DISTINCT LEFT(s.n_group, 1)::INT AS "Курс",
        (SELECT COUNT(DISTINCT sd.n_discipline) 
