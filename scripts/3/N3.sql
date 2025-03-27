@@ -29,7 +29,8 @@ select second_name, n_group from student where n_group in (select distinct n_gro
 
 -- 6.	Вывести список преподавателей, которые преподают тот же предмет, что и преподаватель Бурков.
 -- select second_name_teacher, n_discipline,title_discipline from discipline
-select second_name_teacher, title_discipline from discipline where title_discipline in (select distinct title_discipline from discipline where second_name_teacher = 'Смирнов')
+select second_name_teacher, title_discipline from discipline 
+where title_discipline in (select distinct title_discipline from discipline where second_name_teacher = 'Смирнов')
 
 -- 7.	Вывести количество студентов, сдавших экзамены по всем предметам,
 -- то есть не имеющих задолженностей (использовать группировку).
@@ -99,9 +100,11 @@ select sd.n_credit_book, sd.estimation from student_discipline as sd
 natural join student as s 
 where s.second_name = 'Иванов'
 
-select n_credit_book, estimation from student_discipline where n_credit_book in (select n_credit_book from student where second_name = 'Иванов')
+select n_credit_book, estimation from student_discipline 
+where n_credit_book in (select n_credit_book from student where second_name = 'Иванов')
 
--- 15.	Вывести список групп, у которых принимал экзамен Бурков (написать 2 запроса: использующий естественное соединение и использующий подзапрос).
+-- 15.	Вывести список групп, у которых принимал экзамен Бурков 
+--(написать 2 запроса: использующий естественное соединение и использующий подзапрос).
 select distinct s.n_group
 from student as s
 natural join student_discipline as sd
@@ -118,7 +121,8 @@ where n_credit_book in (
 )
 order by n_group
 
--- 16.	Вывести список названий предметов, которые сдавала студентка Белова (написать 2 запроса: использующий естественное соединение и использующий подзапрос).
+-- 16.	Вывести список названий предметов, которые сдавала студентка Белова (
+--написать 2 запроса: использующий естественное соединение и использующий подзапрос).
 select distinct d.title_discipline 
 from student_discipline as sd
 natural join student as s 
@@ -135,7 +139,8 @@ where n_discipline in (
 )
 order by title_discipline
 
--- 17.	Вывести список студентов, успеваемость которых выше, чем у студентки Беловой, т.е. их средний балл выше, чем средний балл студентки Беловой (подзапрос в предложении Having).
+-- 17.	Вывести список студентов, успеваемость которых выше, чем у студентки Беловой, 
+--т.е. их средний балл выше, чем средний балл студентки Беловой (подзапрос в предложении Having).
 select concat(s.second_name, ' ', s.name, ' ', s.patronymic) as "ФИО студента",
 	avg(sd.estimation) from student_discipline as sd
 join student as s on sd.n_credit_book = s.n_credit_book
@@ -145,33 +150,38 @@ having avg(sd.estimation) > (select avg(sd.estimation) from student_discipline a
 									where second_name = 'Иванов')
 order by s.n_credit_book
 
--- 18.	Узнать по каким предметам самая низкая успеваемость, т.е. средний балл по этим предметам меньше или равен среднему баллу по каждому из остальных предметов (подзапрос в предложении Having, написать 2 запроса).
-select avg(sd.estimation) from student_discipline as sd
-join discipline as d on sd.n_discipline = d.n_discipline
-group by d.title_discipline
-having avg(sd.estimation) <= (select avg(sd.estimation) from student_discipline as sd
-								join discipline as d on sd.n_discipline = d.n_discipline)
-
+-- 18.	Узнать по каким предметам самая низкая успеваемость,
+-- т.е. средний балл по этим предметам меньше или равен среднему баллу по каждому из остальных предметов
+--(подзапрос в предложении Having, написать 2 запроса).
 with avg_est as (
 	select avg(sd.estimation) as aest
 	from student_discipline as sd
 	join discipline as d on sd.n_discipline = d.n_discipline
-	group by d.title_discipline)
-select avg(sd.estimation) from student_discipline as sd
+	group by d.n_discipline)
+select d.title_discipline, avg(sd.estimation) from student_discipline as sd
 join discipline as d on sd.n_discipline = d.n_discipline
+group by d.n_discipline
+having avg(sd.estimation) <= (select min(aest) from avg_est)
+
+select d.title_discipline, avg(sd.estimation) as avg_estimation
+from student_discipline as sd
+join discipline d on sd.n_discipline = d.n_discipline
 group by d.title_discipline
-having avg(sd.estimation) <= (select avg(aest) from avg_est)
-
-
+having avg(sd.estimation) <= (
+    select avg(sd2.estimation)
+    from student_discipline sd2
+    group by sd2.n_discipline
+    order by avg(sd2.estimation)
+    limit 1
+);
 
 
 -- 19.	Узнать номера «сильных» групп (с успеваемостью выше средней из средних по группам) (подзапрос в предложении Having).
-with tmp as (
-	select s.n_group, avg(sd.estimation) as e from student_discipline as sd
-	join student as s on sd.n_credit_book = s.n_credit_book
-	group by s.n_group
-)
 select s.n_group, avg(sd.estimation) from student_discipline as sd
 join student as s on sd.n_credit_book = s.n_credit_book
 group by s.n_group
-having avg(sd.estimation) >= (select avg(e) from tmp)
+having avg(sd.estimation) >= (select avg(e) from (
+	select s.n_group, avg(sd.estimation) as e from student_discipline as sd
+	join student as s on sd.n_credit_book = s.n_credit_book
+	group by s.n_group
+))

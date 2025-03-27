@@ -20,16 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
 
-    # обновляем клона
-    op.execute("""
-    UPDATE student
-    SET  second_name = 'Назаров', name = 'Кирилл', patronymic = 'Дмитриевич', telephone = '89004989312'
-    WHERE n_credit_book = 5;
-    """)
-
     # вставляем 17 новых студентов (теперь их будет 30)
     op.execute("""
-    ALTER SEQUENCE public.student_n_credit_book_seq RESTART WITH 14;
+    SELECT setval('public.student_n_credit_book_seq', (SELECT MAX(n_credit_book) FROM student) + 1);
 
     INSERT INTO student (second_name, name, patronymic, n_group, telephone)
     VALUES  ('Борисов', 'Максим', 'Игоревич', '23C', '89771112233'),
@@ -51,13 +44,23 @@ def upgrade() -> None:
             ('Уваров', 'Егор', 'Дмитриевич', '42B', NULL);
     """)
 
+    # обновляем клона
+    op.execute("""
+        UPDATE student
+        SET  second_name = 'Назаров', name = 'Кирилл', patronymic = 'Дмитриевич', telephone = '89004989312'
+        WHERE n_credit_book = 5;
+    """)
+
+    op.execute("COMMIT;")  # Завершаем предыдущие операции
+
     # добавляем новый предмет
     op.execute("""
-    ALTER SEQUENCE public.discipline_n_discipline_seq RESTART WITH 10;
-               
-    INSERT INTO discipline (title_discipline, second_name_teacher)
-    VALUES ('Математика', 'Петров');
+        INSERT INTO discipline (n_discipline, title_discipline, second_name_teacher)
+        VALUES (10, 'Математика', 'Петров')
+        ON CONFLICT (n_discipline) DO NOTHING;
     """)
+
+    op.execute("COMMIT;")  # Завершаем предыдущие операции
 
     # добавляем результаты экзаменов для уже имеющихся студентов с 5 по 13 и для новых с 14 по 30
     op.execute("""
@@ -83,12 +86,6 @@ def upgrade() -> None:
             (11, 1, 4), -- Попов по математике
             (11, 5, 3), -- Попов по биологии
             (11, 6, 5), -- Попов по литературе
-            (12, 2, 3), -- Соколов по физике
-            (12, 4, 5), -- Соколов по химии
-            (12, 7, 4), -- Соколов по истории
-            (13, 3, 4), -- Лебедев по английскому
-            (13, 6, 5), -- Лебедев по литературе
-            (13, 7, 4), -- Лебедев по истории
             (14, 1, 5), -- Борисов по математике
             (14, 2, 4), -- Борисов по физике
             (14, 3, 2), -- Борисов по английскому (не сдал)
@@ -139,7 +136,9 @@ def upgrade() -> None:
             (29, 6, 5), -- Тимофеева по литературе
             (30, 3, 4), -- Уваров по английскому
             (30, 5, 4), -- Уваров по биологии
-            (30, 7, 5); -- Уваров по истории
+            (30, 7, 5) -- Уваров по истории
+            
+            ON CONFLICT (n_credit_book, n_discipline) DO NOTHING;
     """)
 
 def downgrade() -> None:
