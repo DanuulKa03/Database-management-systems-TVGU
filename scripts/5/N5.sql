@@ -36,7 +36,7 @@ HAVING ROUND(AVG(sd.estimation), 2) > ANY (
     SELECT ROUND(AVG(sd2.estimation), 2) 
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
-    WHERE s2.second_name = 'Иванов'
+    WHERE s2.second_name LIKE 'Иванов'
     GROUP BY s2.n_credit_book
 )
 ORDER BY "Средняя оценка" DESC;
@@ -52,7 +52,7 @@ HAVING EXISTS (
     SELECT 1
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
-    WHERE s2.second_name = 'Иванов'
+    WHERE s2.second_name LIKE 'Иванов'
     GROUP BY s2.n_credit_book
     HAVING ROUND(AVG(sd.estimation), 2) > ROUND(AVG(sd2.estimation), 2)
 )
@@ -71,7 +71,7 @@ HAVING ROUND(AVG(sd.estimation), 2) > ALL (
     SELECT ROUND(AVG(sd2.estimation), 2) 
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
-    WHERE s2.second_name = 'Иванов'
+    WHERE s2.second_name LIKE 'Иванов'
     GROUP BY s2.n_credit_book
 )
 ORDER BY "Средняя оценка" DESC;
@@ -80,7 +80,7 @@ WITH avg_ivanov AS (
 	SELECT ROUND(AVG(sd2.estimation), 2) AS r_avg
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
-    WHERE s2.second_name = 'Иванов'
+    WHERE s2.second_name LIKE 'Иванов'
     GROUP BY s2.n_credit_book
 )
 
@@ -103,13 +103,13 @@ SELECT
 FROM student s
 JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
 JOIN discipline d ON sd.n_discipline = d.n_discipline
-WHERE d.title_discipline = 'Английский'
-AND sd.estimation > ALL (
+WHERE d.title_discipline LIKE 'Английский'
+AND sd.estimation >= ALL (
     SELECT sd2.estimation
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
     JOIN discipline d2 ON sd2.n_discipline = d2.n_discipline
-    WHERE s2.second_name = 'Иванов' AND d2.title_discipline = 'Английский'
+    WHERE s2.second_name LIKE 'Иванов' AND d2.title_discipline LIKE 'Английский'
 )
 ORDER BY sd.estimation DESC;
 ----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ WITH avg_ivanov AS (
     FROM student s2
     JOIN student_discipline sd2 ON s2.n_credit_book = sd2.n_credit_book
 	JOIN discipline d2 ON sd2.n_discipline = d2.n_discipline
-    WHERE s2.second_name = 'Иванов' AND d2.title_discipline = 'Английский'
+    WHERE s2.second_name LIKE 'Иванов' AND d2.title_discipline LIKE 'Английский'
 )
 
 SELECT 
@@ -128,14 +128,14 @@ SELECT
 FROM student s
 JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
 JOIN discipline d ON sd.n_discipline = d.n_discipline
-WHERE d.title_discipline = 'Английский' AND sd.estimation > (SELECT MAX(avg_ivanov.estimation) FROM avg_ivanov)
+WHERE d.title_discipline LIKE 'Английский' AND sd.estimation >= (SELECT MAX(avg_ivanov.estimation) FROM avg_ivanov)
 ORDER BY "оценка по английскому" DESC;
 
 --5. Вывести в алфавитном порядке в одном столбце фамилии, имена и отчества студентов и фамилии преподавателей, 
 --а во втором столбце – статус (студент/преподаватель).
 SELECT CONCAT(second_name, ' ', name, ' ', patronymic) AS "ФИО", 'студент' AS "Статус"
 FROM student 
-UNION ALL
+UNION
 SELECT second_name_teacher AS "ФИО", 'преподаватель' AS "Статус" 
 FROM discipline
 ORDER BY "ФИО";
@@ -158,7 +158,7 @@ WHERE n_group LIKE '11%'
 AND n_group = ANY (
     SELECT n_group 
     FROM student 
-    WHERE second_name = 'Иванов'
+    WHERE second_name LIKE 'Иванов'
 );
 ---------------------------------------------
 SELECT * 
@@ -166,14 +166,14 @@ FROM student
 WHERE n_group IN (
     SELECT n_group 
     FROM student 
-    WHERE second_name = 'Иванов'
+    WHERE second_name LIKE 'Иванов'
 );
 ---------------------------------------------
 SELECT DISTINCT s1.* 
 FROM student s1
 JOIN student s2 ON s1.n_group = s2.n_group
 WHERE s1.n_group LIKE '11%' 
-AND s2.second_name = 'Иванов';
+AND s2.second_name LIKE 'Иванов';
 
 
 --7. Используя объединение Union, создать стипендиальную ведомость о сдаче сессии: 
@@ -231,7 +231,7 @@ ORDER BY t."№ зачетки";
 --8. Вывести количество экзаменов для каждой группы. Результат представить в виде: №группы, количество экзаменов
 SELECT 
     s.n_group AS "№ группы", 
-    COUNT(sd.n_discipline) AS "количество экзаменов"
+    COUNT(DISTINCT sd.n_discipline) AS "количество экзаменов"
 FROM student s
 JOIN student_discipline sd ON s.n_credit_book = sd.n_credit_book
 GROUP BY s.n_group
