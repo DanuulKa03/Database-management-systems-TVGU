@@ -165,7 +165,6 @@ CREATE TABLE "staff" (
   "human_id" int PRIMARY KEY,
   "education" text NOT NULL,
   "position_id" int NOT NULL,
-  "telephone" text NOT NULL,
   "salary" int NOT NULL,
   "labor_rate_id" int NOT NULL,
   "hire_date" date NOT NULL,
@@ -206,7 +205,7 @@ CREATE TABLE "list_social_programs_promotions" (
 CREATE TABLE "telephone_number" (
   "human_id" int,
   "telephone_type_id" int,
-  "telephone" int NOT NULL,
+  "telephone" text NOT NULL,
   PRIMARY KEY ("human_id", "telephone_type_id")
 );
 
