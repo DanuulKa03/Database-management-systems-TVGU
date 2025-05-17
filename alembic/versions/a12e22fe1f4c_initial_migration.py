@@ -27,5 +27,12 @@ def upgrade() -> None:
     conn = op.get_bind()
     conn.execute(text(sql_statements))
 
+    with open("alembic/insert.sql", "r", encoding="utf-8") as sql_file:
+        sql_statements = sql_file.read()
+
+    # Выполняем весь SQL-скрипт целиком
+    conn = op.get_bind()
+    conn.execute(text(sql_statements))
+
 def downgrade() -> None:
     pass
