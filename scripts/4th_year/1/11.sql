@@ -1,0 +1,1 @@
+SELECT * FROM student_discipline WHERE n_credit_book = 1;

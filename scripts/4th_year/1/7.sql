@@ -1,0 +1,1 @@
+SELECT * FROM student WHERE (n_group LIKE '11%' OR n_group LIKE '12%') AND telephone IS NOT NULL;

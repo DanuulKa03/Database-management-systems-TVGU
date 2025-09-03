@@ -1,0 +1,1 @@
+SELECT second_name FROM student;

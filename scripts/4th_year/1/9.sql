@@ -1,0 +1,1 @@
+SELECT second_name_teacher FROM discipline GROUP BY second_name_teacher;

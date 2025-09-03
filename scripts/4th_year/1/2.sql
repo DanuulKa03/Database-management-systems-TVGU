@@ -1,0 +1,1 @@
+SELECT n_group, name, second_name, telephone FROM student;
