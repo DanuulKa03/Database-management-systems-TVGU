@@ -1,1 +1,0 @@
-SELECT * FROM student WHERE n_group LIKE '11%';

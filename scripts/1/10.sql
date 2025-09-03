@@ -1,1 +1,0 @@
-SELECT DISTINCT n_credit_book FROM student_discipline WHERE estimation = 2;
