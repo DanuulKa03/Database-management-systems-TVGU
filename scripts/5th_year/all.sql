@@ -156,7 +156,7 @@ insert into first_course(
     second_name, name, patronymic, n_group, telephone)
 values ('Петров', 'Иван', 'Николаевич', '21Б', null);
 
-UPDATE first_course SET second_name = 'Иванов' where n_credit_book = 55;    
+UPDATE first_course SET second_name = 'Иванов' where n_credit_book = 55;
 UPDATE first_course SET second_name = 'Иванов' where n_credit_book = 45;
 
 drop view first_course;
