@@ -175,7 +175,7 @@ insert into second_course(
     second_name, name, patronymic, n_group, telephone)
 values ('Кузнецова', 'Ольга', 'Владимировна', '12Г', null);
 
-drop view second_course
+drop view second_course;
 -- c)	для третьего курса – 30, 31, 32, 33, 34, 35
 
 create view third_course as
