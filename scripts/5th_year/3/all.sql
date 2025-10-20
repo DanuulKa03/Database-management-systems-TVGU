@@ -1,3 +1,118 @@
+--5.	Создайте триггер каскадного обновления Before Update для таблицы Студент.
+-- 		Убедитесь, что обновления записей, на которые есть ссылки в таблице Студент_предмет,
+--      не происходит (каскадное обновление не осуществляется). Объясните, почему. Удалите триггер.
+
+
+DROP FUNCTION trg_update_sd();
+
+CREATE OR REPLACE FUNCTION trg_update_sd()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE student_discipline SET n_credit_book = NEW.n_credit_book WHERE n_credit_book = OLD.n_credit_book;
+	return new;
+END;
+$$;
+
+DROP TRIGGER trg_student_before_update ON public.student;
+
+CREATE TRIGGER trg_student_before_update
+BEFORE UPDATE ON student
+FOR EACH ROW
+execute Function trg_update_sd();
+
+SELECT * from student;
+
+SELECT * FROM student_discipline
+where n_credit_book in (2, 38);
+
+-- Вызов обновлния
+UPDATE student SET n_credit_book = 38 WHERE n_credit_book = 2;
+-- Привелет к ошибке:
+--SQL Error [23503]: ERROR: insert or update on table "student_discipline" violates foreign key constraint
+--"student_discipline_n_credit_book_fkey"
+--  Подробности: Key (n_credit_book)=(38) is not present in table "student".
+--  Где: SQL statement "UPDATE student_discipline SET n_credit_book = NEW.n_credit_book WHERE n_credit_book = OLD.n_credit_book"
+--PL/pgSQL function trg_bf_update() line 3 at SQL statement
+
+
+
+--6.	Создайте триггер каскадного обновления After Update для таблицы Студент.
+-- 		Убедитесь, что каскадное обновление не осуществляется.
+-- 		Объясните, почему. Удалите триггер.
+DROP TRIGGER trg_student_after_update ON public.student;
+
+CREATE TRIGGER trg_student_after_update
+after UPDATE ON student
+FOR EACH ROW
+execute Function trg_update_sd();
+
+SELECT * from student;
+
+SELECT * FROM student_discipline
+where n_credit_book in (2, 38);
+
+-- Вызов обновлния
+UPDATE student SET n_credit_book = 38 WHERE n_credit_book = 2;
+-- Приводит к ошибке
+--SQL Error [23503]: ERROR: update or delete on table "student" violates foreign key constraint
+-- "student_discipline_n_credit_book_fkey" on table "student_discipline"
+--  Подробности: Key (n_credit_book)=(2) is still referenced from table "student_discipline".
+
+
+--7.	Используя два триггера Before Update и After Update, осуществите каскадное обновление для таблицы Студент.
+
+DROP FUNCTION trg_before_update_sd();
+DROP FUNCTION trg_after_update_sd();
+
+CREATE OR REPLACE FUNCTION trg_before_update_sd()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	drop table if exists temp_sd;
+
+	create temp table temp_sd as
+	select * from student_discipline
+	where n_credit_book = old.n_credit_book;
+
+	delete from student_discipline where n_credit_book = old.n_credit_book;
+	return new;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION trg_after_update_sd()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	update temp_sd set n_credit_book = new.n_credit_book where n_credit_book = old.n_credit_book;
+
+	insert into student_discipline (n_credit_book, n_discipline, estimation) select * from temp_sd where n_credit_book = new.n_credit_book;
+	drop table if exists temp_sd;
+	return new;
+END;
+$$;
+
+DROP TRIGGER trg_student_before_update_2 ON public.student;
+
+CREATE TRIGGER trg_student_before_update_2
+BEFORE UPDATE ON student
+FOR EACH ROW
+execute Function trg_before_update_sd();
+
+DROP TRIGGER trg_student_after_update_2 ON public.student;
+
+CREATE TRIGGER trg_student_after_update_2
+after UPDATE ON student
+FOR EACH ROW
+execute Function trg_after_update_sd();
+
+
+UPDATE student SET n_credit_book = 38 WHERE n_credit_book = 2;
+
+
 -- 8. Создайте таблицу Стипендия. Создайте триггер Before Insert для таблицы Стипендия, который
 -- при начислении студенту социальной стипендии проверяет, должен ли студент получать
 -- академическую стипендию по итогам результатов сессии, и если должен, то назначает
