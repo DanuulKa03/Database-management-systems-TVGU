@@ -625,6 +625,24 @@ graph TD
     )
     ORDER BY u.rolname;
     ```
+	вывод 
+	```sql
+	     user_name      |    role_name     
+	--------------------+------------------
+	curator1_user      | curator_1_course
+	curator2_user      | curator_2_course
+	curator3_user      | curator_3_course
+	curator4_user      | curator_4_course
+	curator5_user      | curator_5_course
+	curator6_user      | curator_6_course
+	deputy_dean_user   | deputy_dean
+	firstadmin         | administrator
+	methodologist_user | methodologist
+	teacher_user       | teacher
+	(10 rows)
+
+	tvgudb=# 
+	```
 
 11. Предоставьте одному из пользователей напрямую одну из привилегий, предоставляемую ему ролью.
 
