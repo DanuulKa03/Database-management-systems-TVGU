@@ -346,8 +346,8 @@ IF v_group IS NULL THEN
         RAISE EXCEPTION 'Студент с зачетной книжкой % не найден', NEW.credit_book;
 END IF;
 
-    IF NEW.n_group IS DISTINCT FROM v_group THEN
-        NEW.n_group := v_group; -- исправляем
+IF NEW.n_group IS DISTINCT FROM v_group THEN
+    NEW.n_group := v_group; -- исправляем
 END IF;
 
 RETURN NEW;
@@ -360,11 +360,9 @@ CREATE TRIGGER bfi_scholarship_fix_group
     FOR EACH ROW
     EXECUTE FUNCTION trg_scholarship_fix_group();
 
--- Пытаемся вставить с неправильной группой: у студента 2 группа "11A"
 INSERT INTO scholarship (credit_book, stipend_kind, amount, n_group)
 VALUES (2, 'academic', 2000.00, '99Z');
 
--- Проверяем, что в таблице стипендий группа исправилась
 SELECT * FROM scholarship WHERE credit_book = 2;
 
 -- 10. Создайте триггеры, осуществляющие аудит операций обновления, удаления и вставки для
@@ -391,11 +389,11 @@ CREATE TABLE IF NOT EXISTS audit (
 CREATE OR REPLACE FUNCTION fn_student_audit()
     RETURNS TRIGGER AS $$
 DECLARE
-k  TEXT;
+    k  TEXT;
     ov TEXT;
     nv TEXT;
 BEGIN
-    IF TG_OP = 'INSERT' THEN
+IF TG_OP = 'INSERT' THEN
         FOR k, nv IN SELECT * FROM each(hstore(NEW)) LOOP
     INSERT INTO audit(username, action_time, operation, table_name, attribute, old_value, new_value)
                      VALUES (CURRENT_USER, NOW(), 'INSERT', TG_TABLE_NAME, k, NULL, nv);
@@ -410,7 +408,7 @@ END LOOP;
 RETURN OLD;
 
 ELSE -- UPDATE
-        FOR k IN
+FOR k IN
 SELECT DISTINCT key
 FROM (
     SELECT key FROM each(hstore(OLD))
@@ -419,10 +417,10 @@ FROM (
     ) t
     LOOP
     ov := (hstore(OLD))->k;
-nv := (hstore(NEW))->k;
-                IF ov IS DISTINCT FROM nv THEN
-                    INSERT INTO audit(username, action_time, operation, table_name, attribute, old_value, new_value)
-                    VALUES (CURRENT_USER, NOW(), 'UPDATE', TG_TABLE_NAME, k, ov, nv);
+    nv := (hstore(NEW))->k;
+        IF ov IS DISTINCT FROM nv THEN
+            INSERT INTO audit(username, action_time, operation, table_name, attribute, old_value, new_value)
+            VALUES (CURRENT_USER, NOW(), 'UPDATE', TG_TABLE_NAME, k, ov, nv);
 END IF;
 END LOOP;
 RETURN NEW;
@@ -472,7 +470,8 @@ CREATE OR REPLACE FUNCTION trg_student_phone_check_on_insert()
 DECLARE
 first_char TEXT;
 BEGIN
-    IF NEW.telephone IS NULL THEN
+
+IF NEW.telephone IS NULL THEN
         RETURN NEW; -- допускаем NULL
 END IF;
 
