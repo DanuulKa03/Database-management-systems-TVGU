@@ -428,6 +428,7 @@ EXECUTE — X
 | curator_6_course | S          | NONE     | NONE     | NONE     | NONE     | NONE     | S        | S       | S                  | X                 |
 | teacher          | S          | NONE     | NONE     | NONE     | NONE     | NONE     | NONE     | NONE    | NONE               | X                 |
 5. Постройте схему иерархии ролей (графическое изображение).
+
 ```mermaid
 graph TD
     A[Администратор] --> B[Замдекана]
@@ -685,3 +686,326 @@ graph TD
     CALL
     tvgudb=> 
     ```
+
+12.
+
+```sql
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_dean') THEN
+CREATE ROLE u_dean LOGIN PASSWORD 'u_dean_pw';
+END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_deputy') THEN
+CREATE ROLE u_deputy LOGIN PASSWORD 'u_deputy_pw';
+END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_methodologist') THEN
+CREATE ROLE u_methodologist LOGIN PASSWORD 'u_methodologist_pw';
+END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_teacher') THEN
+CREATE ROLE u_teacher LOGIN PASSWORD 'u_teacher_pw';
+END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_curator1') THEN
+CREATE ROLE u_curator1 LOGIN PASSWORD 'u_curator1_pw';
+END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_teacher_direct') THEN
+CREATE ROLE u_teacher_direct LOGIN PASSWORD 'u_teacher_direct_pw';
+END IF;
+END$$;
+
+GRANT dean              TO u_dean;
+GRANT deputy_dean       TO u_deputy;
+GRANT methodologist     TO u_methodologist;
+GRANT teacher           TO u_teacher;
+GRANT curator_1_course  TO u_curator1;
+GRANT teacher           TO u_teacher_direct;
+```
+
+Проверка ролей
+```sql
+SELECT member.rolname AS user_name,
+       role.rolname   AS role_name
+FROM pg_auth_members m
+         JOIN pg_roles role   ON role.oid   = m.roleid
+         JOIN pg_roles member ON member.oid = m.member
+WHERE member.rolname IN (
+                         'u_dean','u_deputy','u_methodologist','u_teacher','u_curator1','u_teacher_direct'
+    )
+ORDER BY user_name, role_name;
+```
+
+Вывод:
+
+| user\_name | role\_name |
+| :--- | :--- |
+| u\_curator1 | curator\_1\_course |
+| u\_dean | dean |
+| u\_deputy | deputy\_dean |
+| u\_methodologist | methodologist |
+| u\_teacher | teacher |
+| u\_teacher\_direct | teacher |
+
+
+12.A  
+
+```bash
+[2025-11-12 09:14:07] tvgudb.public> SET ROLE dean
+[2025-11-12 09:14:07] completed in 5 ms
+```
+
+```sql
+SELECT current_user AS acting_as_dean,
+has_table_privilege(current_user,'public.student','SELECT') AS can_select_student,
+has_table_privilege(current_user,'public.student_discipline','SELECT') AS can_select_student_disc,
+has_table_privilege(current_user,'public.discipline','SELECT') AS can_select_discipline;
+```
+
+| acting\_as\_dean | can\_select\_student | can\_select\_student\_disc | can\_select\_discipline |
+| :--- | :--- | :--- | :--- |
+| dean | true | true | true |
+
+
+```bash
+[2025-11-12 09:14:11] tvgudb.public> CALL current_session()
+Предмет: Математика | Преподаватель: Смирнов | Отчётность: test
+Предмет: Литература | Преподаватель: Петров | Отчётность: test
+Предмет: Информатика | Преподаватель: Смирнов | Отчётность: test
+Предмет: Математика | Преподаватель: Казаков | Отчётность: test
+Предмет: Английский | Преподаватель: Коновалов | Отчётность: test
+Предмет: Химия | Преподаватель: Смирнов | Отчётность: exam
+Предмет: История | Преподаватель: Сидорова | Отчётность: exam
+Предмет: Информатика | Преподаватель: Коновалов | Отчётность: exam
+[2025-11-12 09:14:11] completed in 6 ms
+```
+
+12.B
+
+```bash
+[2025-11-12 09:22:27] tvgudb.public> SET ROLE deputy_dean
+[2025-11-12 09:22:27] completed in 14 ms
+```
+
+```sql
+SELECT current_user AS acting_as_deputy,
+       has_table_privilege(current_user,'public.student','SELECT') AS can_select_student,
+       has_table_privilege(current_user,'public.student_discipline','SELECT') AS can_select_student_disc,
+       has_table_privilege(current_user,'public.discipline','SELECT') AS can_select_disc,
+       has_table_privilege(current_user,'public.discipline','INSERT') AS can_insert_disc,
+       has_table_privilege(current_user,'public.discipline','UPDATE') AS can_update_disc,
+       has_table_privilege(current_user,'public.discipline','DELETE') AS can_delete_disc;
+```
+
+| acting\_as\_deputy | can\_select\_student | can\_select\_student\_disc | can\_select\_disc | can\_insert\_disc | can\_update\_disc | can\_delete\_disc |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| deputy\_dean | true | true | false | false | false | false |
+
+```bash
+[2025-11-12 09:27:53] tvgudb.public> CALL current_session()
+[2025-11-12 09:27:53] [42501] ERROR: permission denied for table discipline_plus
+[2025-11-12 09:27:53] Where: SQL statement "SELECT *
+[2025-11-12 09:27:53] FROM discipline_plus dp
+[2025-11-12 09:27:53] WHERE dp.is_cur_session"
+[2025-11-12 09:27:53] PL/pgSQL function current_session() line 5 at FOR over SELECT rows
+```
+
+12.C
+
+```bash
+[2025-11-12 09:48:11] tvgudb.public> SET ROLE methodologist
+[2025-11-12 09:48:11] completed in 3 ms
+```
+
+```sql
+SELECT current_user AS acting_as_methodologist,
+       has_table_privilege(current_user,'public.student','SELECT') AS can_select_student,
+       has_table_privilege(current_user,'public.student','INSERT') AS can_insert_student,
+       has_table_privilege(current_user,'public.student','UPDATE') AS can_update_student,
+       has_table_privilege(current_user,'public.student','DELETE') AS can_delete_student,
+       has_table_privilege(current_user,'public.student_discipline','SELECT') AS can_select_student_disc,
+       has_table_privilege(current_user,'public.discipline','SELECT') AS can_select_discipline;
+```
+
+| acting\_as\_methodologist | can\_select\_student | can\_insert\_student | can\_update\_student | can\_delete\_student | can\_select\_student\_disc | can\_select\_discipline |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| methodologist | true | true | true | true | true | false |
+
+
+```bash
+[2025-11-12 09:49:29] tvgudb.public> SELECT n_discipline, title_discipline, second_name_teacher
+                                     FROM discipline
+                                     ORDER BY n_discipline
+                                         LIMIT 10
+[2025-11-12 09:49:29] [42501] ERROR: permission denied for table discipline
+```
+
+```bash
+[2025-11-12 09:50:51] tvgudb.public> CALL current_session()
+[2025-11-12 09:50:51] [42501] ERROR: permission denied for table discipline_plus
+[2025-11-12 09:50:51] Where: SQL statement "SELECT *
+[2025-11-12 09:50:51] FROM discipline_plus dp
+[2025-11-12 09:50:51] WHERE dp.is_cur_session"
+[2025-11-12 09:50:51] PL/pgSQL function current_session() line 5 at FOR over SELECT rows
+```
+
+12.D
+
+```bash
+[2025-11-12 09:51:13] tvgudb.public> SET ROLE teacher
+[2025-11-12 09:51:13] completed in 6 ms
+```
+
+```sql
+SELECT current_user AS acting_as_teacher,
+       has_table_privilege(current_user,'public.discipline','SELECT') AS can_select_discipline;
+```
+
+| acting\_as\_teacher | can\_select\_discipline |
+| :--- | :--- |
+| teacher | true |
+
+```bash
+[2025-11-12 09:51:22] tvgudb.public> CALL current_session()
+[2025-11-12 09:51:22] [42501] ERROR: permission denied for table discipline_plus
+[2025-11-12 09:51:22] Where: SQL statement "SELECT *
+[2025-11-12 09:51:22] FROM discipline_plus dp
+[2025-11-12 09:51:22] WHERE dp.is_cur_session"
+[2025-11-12 09:51:22] PL/pgSQL function current_session() line 5 at FOR over SELECT rows
+```
+
+12.E
+
+```bash
+[2025-11-12 09:53:12] tvgudb.public> SET ROLE curator_1_course
+[2025-11-12 09:53:12] completed in 6 ms
+```
+
+```bash
+[2025-11-12 09:53:31] tvgudb.public> SELECT 'student_rows_visible' AS check_name, COUNT(*) AS rows_visible FROM student
+[2025-11-12 09:53:31] [42501] ERROR: permission denied for table student
+```
+
+```bash
+[2025-11-12 09:54:55] tvgudb.public> SELECT 'student_discipline_rows_visible' AS check_name, COUNT(*) AS rows_visible FROM student_discipline
+[2025-11-12 09:54:55] [42501] ERROR: permission denied for table student_discipline
+```
+
+```sql
+SELECT current_user AS acting_as_curator1,
+       has_table_privilege(current_user,'public.student','SELECT') AS can_select_student,
+       has_table_privilege(current_user,'public.student_discipline','SELECT') AS can_select_student_disc;
+```
+
+| acting\_as\_curator1 | can\_select\_student | can\_select\_student\_disc |
+| :--- | :--- | :--- |
+| curator\_1\_course | false | false |
+
+```bash
+[2025-11-12 09:55:52] tvgudb.public> CALL current_session()
+[2025-11-12 09:55:52] [42501] ERROR: permission denied for table discipline_plus
+[2025-11-12 09:55:52] Where: SQL statement "SELECT *
+[2025-11-12 09:55:52] FROM discipline_plus dp
+[2025-11-12 09:55:52] WHERE dp.is_cur_session"
+[2025-11-12 09:55:52] PL/pgSQL function current_session() line 5 at FOR over SELECT rows
+```
+
+12.F
+
+```sql
+GRANT SELECT ON public.discipline TO u_teacher_direct;
+SELECT 'before_revokes' AS phase,
+       pg_has_role('u_teacher_direct','teacher','USAGE') AS is_member_of_teacher,
+       has_table_privilege('u_teacher_direct','public.discipline','SELECT') AS user_can_select_discipline;
+```
+
+| phase | is\_member\_of\_teacher | user\_can\_select\_discipline |
+| :--- | :--- | :--- |
+| before\_revokes | true | true |
+
+```sql
+REVOKE SELECT ON public.discipline FROM u_teacher_direct;
+SELECT 'after_revoke_direct' AS phase,
+       pg_has_role('u_teacher_direct','teacher','USAGE') AS is_member_of_teacher,
+       has_table_privilege('u_teacher_direct','public.discipline','SELECT') AS user_can_select_discipline;
+```
+
+| phase | is\_member\_of\_teacher | user\_can\_select\_discipline |
+| :--- | :--- | :--- |
+| after\_revoke\_direct | true | true |
+
+```sql
+GRANT SELECT ON public.discipline TO u_teacher_direct;
+REVOKE SELECT ON public.discipline FROM teacher;
+SELECT 'after_revoke_from_role' AS phase,
+       pg_has_role('u_teacher_direct','teacher','USAGE') AS is_member_of_teacher,
+       has_table_privilege('u_teacher_direct','public.discipline','SELECT') AS user_can_select_discipline;
+```
+
+| phase | is\_member\_of\_teacher | user\_can\_select\_discipline |
+| :--- | :--- | :--- |
+| after\_revoke\_from\_role | true | true |
+
+
+```sql
+GRANT SELECT ON public.discipline TO teacher;
+REVOKE SELECT ON public.discipline FROM u_teacher_direct;
+```
+
+12.G
+```sql
+GRANT curator_1_course TO u_teacher;
+SELECT grantee AS user_name, role_name
+FROM information_schema.applicable_roles
+WHERE grantee = 'u_teacher'
+ORDER BY role_name;
+```
+
+| user\_name | role\_name |
+| :--- | :--- |
+| u\_teacher | curator\_1\_course |
+| u\_teacher | teacher |
+
+```bash
+[2025-11-12 10:01:09] tvgudb.public> SET ROLE curator_1_course
+[2025-11-12 10:01:09] completed in 5 ms
+[2025-11-12 10:01:11] tvgudb.public> SELECT current_user AS acting_as_after_role_switch,
+                                            (SELECT COUNT(*) FROM student) AS rows_student_visible_under_curator_role
+[2025-11-12 10:01:11] [42501] ERROR: permission denied for table student
+```
+
+```bash
+[2025-11-12 10:01:34] tvgudb.public> RESET ROLE
+[2025-11-12 10:01:34] completed in 3 ms
+```
+
+13-16
+```sql
+REVOKE dean              FROM u_dean;
+REVOKE deputy_dean       FROM u_deputy;
+REVOKE methodologist     FROM u_methodologist;
+REVOKE teacher           FROM u_teacher;
+REVOKE curator_1_course  FROM u_curator1;
+REVOKE teacher           FROM u_teacher_direct;
+REVOKE curator_1_course  FROM u_teacher;
+REVOKE ALL PRIVILEGES ON public.discipline FROM u_teacher_direct;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_dean') THEN
+DROP ROLE u_dean;
+END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_deputy') THEN
+DROP ROLE u_deputy;
+END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_methodologist') THEN
+DROP ROLE u_methodologist;
+END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_teacher') THEN
+DROP ROLE u_teacher;
+END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_curator1') THEN
+DROP ROLE u_curator1;
+END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'u_teacher_direct') THEN
+DROP ROLE u_teacher_direct;
+END IF;
+END$$;
+```
