@@ -504,10 +504,8 @@ $$;
 
 CALL results_and_stipendii();
 
-SELECT *
-FROM session_results;
-SELECT *
-FROM stipendii;
+SELECT * FROM session_results;
+SELECT * FROM stipendii;
 -------------------------------------------------------------------------------------------------------------------
 --13.	Создать процедуру, которая генерирует пароли студентов для теста и помещает их в создаваемую таблицу Пароли.
 --		Пароль должен содержать заглавные и прописные английские буквы, цифры и знаки препинания и иметь длину не менее 8 символов.
@@ -551,5 +549,4 @@ $$;
 CALL passwords_gen();
 CALL passwords_gen(20);
 
-SELECT *
-FROM test_passwords;
+SELECT * FROM test_passwords;
