@@ -103,7 +103,6 @@ BEGIN
     -- 3.7.1.1. Определяем имя текущего (активного) пользователя
     v_username
         := current_user;
-    -- в PostgreSQL аналог USER()
 
     -- 3.7.1.2. Определяем уровень доступа пользователя по таблице user_levels
     SELECT user_level
@@ -114,20 +113,14 @@ BEGIN
     IF
         NOT FOUND THEN
         RAISE EXCEPTION SQLSTATE '50005'
-            USING MESSAGE = format(
-                    'Для пользователя %s не задан уровень доступа в таблице user_levels',
-                    v_username
-                            );
+            USING MESSAGE = format('Для пользователя %s не задан уровень доступа в таблице user_levels',v_username);
     END IF;
 
     -- Если метка доступа пользователя не соответствует метке записи, запрещаем удаление
     IF
         v_user_level <> OLD.mand_level THEN
         RAISE EXCEPTION SQLSTATE '50005'
-            USING MESSAGE = format(
-                    'Удаление запрещено: уровень пользователя (%s) не совпадает с уровнем записи (%s)',
-                    v_user_level, OLD.mand_level
-                            );
+            USING MESSAGE = format('Удаление запрещено: уровень пользователя (%s) не совпадает с уровнем записи (%s)', v_user_level, OLD.mand_level);
     END IF;
 
     -- Разрешаем удаление
@@ -150,11 +143,8 @@ EXECUTE FUNCTION mand_tab_before_delete();
 -- Представление, в котором отбираются записи только с уровнем текущего пользователя
 -- (используем его в п. 3.8.1.3)
 CREATE OR REPLACE VIEW mand_tab_view AS
-SELECT m.*
-FROM mand_tab m
-         JOIN user_levels u
-              ON u.user_level = m.mand_level
-                  AND u.user_name = current_user;
+SELECT m.* FROM mand_tab m
+JOIN user_levels u ON u.user_level = m.mand_level AND u.user_name = current_user;
 -- привязка к активному пользователю
 
 -- Хранимая функция select_mand_tab
@@ -194,7 +184,7 @@ BEGIN
     SELECT count(*)
     INTO v_cnt
     FROM mand_tab
-    WHERE mand_level = v_user_level;
+    WHERE mand_level <= v_user_level;
 
 -- 3.8.1.4. Если записей нет, печатаем сообщение
     IF

@@ -427,7 +427,7 @@ UPDATE 1
 ```sql
 -- пример: пробуем удалить одну и ту же запись под разными ролями
 SET ROLE stud_0;
-DELETE FROM mand_tab WHERE n_credit_book = '12345';  -- либо любой существующий
+DELETE FROM mand_tab WHERE n_credit_book = '10';
 RESET ROLE;
 ```
 
